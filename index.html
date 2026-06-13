@@ -283,11 +283,36 @@ function showStatus(msg, ok) {
 function handleFile(e) { const f = e.target.files?.[0]; if (f) processFile(f); }
 function processFile(file) {
   if (!file.type.startsWith('image/')) { alert('画像ファイルを選択してください'); return; }
-  imageMimeType = file.type;
-  const reader = new FileReader();
-  reader.onload = e => { imageBase64 = e.target.result.split(',')[1]; showPreview(e.target.result); checkReady(); };
-  reader.readAsDataURL(file);
   stopCamera();
+  const reader = new FileReader();
+  reader.onload = e => resizeImage(e.target.result);
+  reader.readAsDataURL(file);
+}
+// 送信前に長辺1024pxへ縮小（アップロード量と生成時間を削減）
+function resizeImage(dataUrl) {
+  const MAX = 1024;
+  const img = new Image();
+  img.onload = () => {
+    let { width:w, height:h } = img;
+    if (Math.max(w, h) > MAX) {
+      if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+      else { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const out = canvas.toDataURL('image/jpeg', .85);
+    imageBase64 = out.split(',')[1];
+    imageMimeType = 'image/jpeg';
+    showPreview(out); checkReady();
+  };
+  img.onerror = () => {
+    // 縮小に失敗した場合は元画像をそのまま使用
+    imageBase64 = dataUrl.split(',')[1];
+    imageMimeType = 'image/jpeg';
+    showPreview(dataUrl); checkReady();
+  };
+  img.src = dataUrl;
 }
 function showPreview(dataUrl) {
   const z = document.getElementById('uploadZone');
@@ -606,14 +631,15 @@ async function generateMakeover() {
 
   body.innerHTML = '<div class="gen-loading"><div class="spinner"></div>AIがメイクを施しています...<br><small>10〜30秒ほどお待ちください</small></div>';
 
-  const makeoverPrompt = `この女性の顔写真に、以下のメイクをナチュラルに施した画像を生成してください。`
-    + `本人の顔立ち・骨格・肌・髪型のベースはそのまま保ち、別人にしないでください。高校生らしい清楚でナチュラルな仕上がりにしてください。\n\n`
+  const makeoverPrompt = `この女性の顔写真に、以下のメイクをナチュラルに施し、髪型もおすすめスタイルに変更した画像を生成してください。`
+    + `本人の顔立ち・骨格・肌・本人らしさはそのまま保ち、別人にしないでください。高校生らしい清楚でナチュラルな仕上がりにしてください。\n\n`
+    + `【髪型】この写真の髪型を、次の提案スタイルに自然に変えてください。前髪: ${hs.bangs||''} / 長さ: ${hs.length||''} / スタイル: ${hs.style||''}。髪色は元の自然な色みを保ち、不自然なカラーにはしないでください。\n`
     + `【リップ】色: ${lp.color||''} / 質感: ${lp.texture||''}\n`
     + `【チーク】位置: ${ck.position||''} / 色: ${ck.color||''}\n`
     + `【アイメイク】アイライン: ${ey.eyeliner||''} / アイシャドウ: ${ey.eyeshadow_color||''}（${ey.eyeshadow_method||''}）\n`
     + `【涙袋メイク】${ey.tear_bag||'下まぶたの目頭から黒目下にかけて、明るいパールカラーでぷっくりとしたハイライトを入れ、すぐ下に細く自然な影を入れて立体感を出す'}\n`
     + `必ず両目の下に、ぷっくりとした自然な涙袋を作ってください（涙袋の上側にツヤのあるハイライト、下側にうっすら影）。やりすぎず高校生らしいナチュラルな涙袋にしてください。\n`
-    + `肌は自然にトーンアップし、やりすぎない仕上がりに。写真の構図・背景・向きは元のまま、メイクのみを反映してください。`;
+    + `肌は自然にトーンアップし、やりすぎない仕上がりに。写真の構図・背景・顔の向きは元のまま、メイクと髪型のみを変更してください。`;
 
   try {
     // gemini-2.5-flash-image (画像生成・編集対応モデル)
@@ -649,7 +675,7 @@ async function generateMakeover() {
           <img src="${beforeUrl}" alt="メイク前">
         </div>
         <div class="makeover-item">
-          <div class="makeover-label after">After（提案メイク）💄</div>
+          <div class="makeover-label after">After（提案メイク＆髪型）💄✨</div>
           <img src="${makeoverDataUrl}" alt="メイク後">
         </div>
       </div>
