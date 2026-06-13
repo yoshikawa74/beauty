@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>あなたに似合うメイク診断 💄</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink-100:#FFF0F5; --pink-200:#FFD6E7; --pink-300:#FFB3D1;
+  --pink-400:#FF7EB3; --pink-500:#FF4D94; --pink-600:#E6336E;
+  --coral:#FF7F7F; --peach:#FFCBA4; --lavender:#E8D5F5;
+  --mint:#D4F0E7; --cream:#FFF8F0;
+  --text:#3D2B3D; --text-light:#7A5C7A; --white:#FFFFFF;
+  --shadow:0 4px 24px rgba(255,77,148,.12);
+  --shadow-lg:0 12px 40px rgba(255,77,148,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Zen Maru Gothic',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-20%;right:-10%;width:60vw;height:60vw;border-radius:50%;background:radial-gradient(circle,rgba(255,77,148,.06) 0%,transparent 70%);pointer-events:none}
+body::after{content:'';position:fixed;bottom:-15%;left:-10%;width:50vw;height:50vw;border-radius:50%;background:radial-gradient(circle,rgba(232,213,245,.15) 0%,transparent 70%);pointer-events:none}
+.app{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:20px 16px 60px}
+
+.header{text-align:center;padding:40px 20px 30px;animation:fadeUp .8s ease}
+.header-badge{display:inline-block;background:linear-gradient(135deg,var(--pink-400),var(--lavender));color:#fff;font-size:11px;font-weight:700;padding:6px 16px;border-radius:20px;letter-spacing:1px;margin-bottom:16px}
+.header h1{font-weight:900;font-size:clamp(28px,6vw,42px);background:linear-gradient(135deg,var(--pink-500),#C06EDB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.3;margin-bottom:12px}
+.header p{color:var(--text-light);font-size:14px;line-height:1.7}
+
+.card{background:var(--white);border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.card.f1{animation:fadeUp .8s ease .1s both}
+.card.f2{animation:fadeUp .8s ease .15s both}
+.card.f3{animation:fadeUp .8s ease .2s both}
+.card label{display:block;font-weight:700;font-size:14px;margin-bottom:8px;color:var(--pink-600)}
+.card small{display:block;color:var(--text-light);font-size:11px;margin-bottom:12px}
+.card small a{color:var(--pink-500)}
+
+.row{display:flex;gap:8px}
+input[type="password"],select{flex:1;padding:12px 16px;border:2px solid var(--pink-200);border-radius:12px;font-family:inherit;font-size:14px;color:var(--text);background:var(--white);outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--pink-400)}
+.btn-save{padding:12px 20px;background:linear-gradient(135deg,var(--pink-400),var(--pink-500));color:#fff;border:none;border-radius:12px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;transition:transform .15s,box-shadow .15s}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,77,148,.3)}
+.api-status{margin-top:8px;font-size:12px;font-weight:500}
+.api-status.ok{color:#4CAF50} .api-status.ng{color:#E53935}
+
+.upload-zone{border:3px dashed var(--pink-200);border-radius:20px;padding:40px 20px;cursor:pointer;text-align:center;transition:all .3s ease;overflow:hidden}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--pink-400);background:var(--pink-100)}
+.upload-zone.has-image{border-style:solid;border-color:var(--pink-300);padding:16px}
+.upload-icon{font-size:48px;margin-bottom:12px}
+.upload-zone h3{font-size:16px;font-weight:700;margin-bottom:6px;color:var(--pink-600)}
+.upload-zone p{font-size:13px;color:var(--text-light)}
+.preview-img{max-width:100%;max-height:360px;border-radius:16px;object-fit:contain}
+.btn-change{display:inline-block;margin-top:12px;padding:8px 20px;background:var(--pink-100);color:var(--pink-600);border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
+
+.camera-btns{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.cam-btn{padding:10px 22px;border:2px solid var(--pink-300);background:var(--white);color:var(--pink-600);border-radius:12px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.cam-btn:hover{background:var(--pink-100)}
+.cam-btn.active{background:var(--pink-400);color:#fff;border-color:var(--pink-400)}
+.camera-stage{position:relative;display:inline-block;width:100%;text-align:center}
+#cameraVideo{width:100%;max-width:480px;border-radius:16px;margin-top:12px;display:none}
+#cameraCanvas{display:none}
+#captureBtn{display:none;margin:12px auto 0}
+.countdown-overlay{position:absolute;inset:12px 0 0 0;display:none;align-items:center;justify-content:center;border-radius:16px;background:rgba(61,43,61,.35);pointer-events:none}
+.countdown-overlay.show{display:flex}
+.countdown-num{font-size:clamp(80px,28vw,160px);font-weight:900;color:#fff;text-shadow:0 4px 24px rgba(255,77,148,.6);animation:popNum .9s ease}
+.countdown-num.smile{font-size:clamp(40px,12vw,72px)}
+@keyframes popNum{0%{transform:scale(.3);opacity:0}30%{transform:scale(1.15);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(.85);opacity:0}}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999}
+.flash.fire{animation:flashFire .5s ease}
+@keyframes flashFire{0%{opacity:0}10%{opacity:.9}100%{opacity:0}}
+
+.analyze-btn{display:block;width:100%;padding:18px;background:linear-gradient(135deg,var(--pink-400),#C06EDB);color:#fff;border:none;border-radius:16px;font-family:inherit;font-weight:900;font-size:18px;cursor:pointer;box-shadow:var(--shadow-lg);transition:transform .2s,box-shadow .2s;animation:fadeUp .8s ease .3s both;position:relative;overflow:hidden}
+.analyze-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 16px 48px rgba(255,77,148,.25)}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed}
+.analyze-btn .shimmer{position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:shimmer 2s infinite}
+
+.loading{display:none;text-align:center;padding:60px 20px;animation:fadeUp .5s ease}
+.loading.show{display:block}
+.spinner{width:56px;height:56px;border:4px solid var(--pink-200);border-top-color:var(--pink-500);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
+.loading p{font-weight:700;color:var(--pink-600);font-size:15px}
+.loading small{color:var(--text-light);font-size:12px}
+
+.error-msg{background:#FFF0F0;color:#D32F2F;padding:16px 20px;border-radius:14px;font-size:13px;font-weight:500;margin-bottom:20px;display:none;line-height:1.6}
+.error-msg.show{display:block;animation:fadeUp .4s ease}
+
+.results{display:none} .results.show{display:block;animation:fadeUp .6s ease}
+.result-section{background:var(--white);border-radius:24px;padding:28px 24px;margin-bottom:20px;box-shadow:var(--shadow);animation:fadeUp .6s ease both}
+.result-section:nth-child(2){animation-delay:.1s}
+.result-section:nth-child(3){animation-delay:.2s}
+.result-section:nth-child(4){animation-delay:.3s}
+.result-section:nth-child(5){animation-delay:.4s}
+.result-section:nth-child(6){animation-delay:.5s}
+.result-section:nth-child(7){animation-delay:.6s}
+
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.section-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.icon-face{background:linear-gradient(135deg,var(--peach),var(--coral))}
+.icon-hair{background:linear-gradient(135deg,#D4A5FF,#9B59B6)}
+.icon-lip{background:linear-gradient(135deg,var(--pink-300),var(--pink-500))}
+.icon-cheek{background:linear-gradient(135deg,var(--peach),var(--pink-300))}
+.icon-eye{background:linear-gradient(135deg,var(--lavender),#7B68EE)}
+.icon-tools{background:linear-gradient(135deg,var(--mint),#4CAF50)}
+.section-header h2{font-weight:900;font-size:17px}
+.result-content{font-size:14px;line-height:1.9;white-space:pre-wrap}
+.result-content strong{color:var(--pink-600)}
+
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tag{display:inline-block;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.tag.pink{background:var(--pink-100);color:var(--pink-600)}
+.tag.lavender{background:var(--lavender);color:#7B3FA0}
+.tag.peach{background:#FFF0E0;color:#CC7733}
+.tag.mint{background:var(--mint);color:#2E8B57}
+
+.product-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.product-card{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--pink-100);border-radius:14px}
+.product-emoji{font-size:28px;flex-shrink:0}
+.product-info{flex:1;min-width:0}
+.product-name{font-weight:700;font-size:13px}
+.product-use{font-size:12px;color:var(--text-light);margin-top:2px}
+.product-price{font-weight:900;font-size:14px;color:var(--pink-600);flex-shrink:0}
+.total-price{text-align:right;font-weight:900;font-size:16px;color:var(--pink-600);margin-top:12px;padding-top:12px;border-top:2px dashed var(--pink-200)}
+
+.reset-btn{display:block;width:100%;padding:16px;background:var(--white);color:var(--pink-500);border:2px solid var(--pink-300);border-radius:16px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px;transition:all .2s}
+.reset-btn:hover{background:var(--pink-100)}
+.print-btn{display:block;width:100%;padding:16px;background:var(--lavender);color:#7B3FA0;border:none;border-radius:16px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px;transition:all .2s}
+.print-btn:hover{opacity:.85}
+
+/* Makeover (after-makeup image) */
+.makeover-grid{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.makeover-item{flex:1;min-width:200px;max-width:340px;text-align:center}
+.makeover-item img{width:100%;border-radius:16px;box-shadow:var(--shadow);display:block}
+.makeover-label{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
+.makeover-label.after{color:var(--pink-600)}
+.gen-btn{display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--pink-400),#C06EDB);color:#fff;border:none;border-radius:14px;font-family:inherit;font-weight:900;font-size:15px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.gen-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.gen-btn:disabled{opacity:.5;cursor:not-allowed}
+.gen-loading{text-align:center;padding:30px 10px;color:var(--pink-600);font-weight:700;font-size:14px}
+.gen-loading .spinner{margin:0 auto 16px}
+.gen-note{font-size:11px;color:var(--text-light);text-align:center;margin-top:10px;line-height:1.6}
+
+/* Warning banner */
+.warn-banner{background:#FFF3E0;border:2px solid #FFB74D;border-radius:16px;padding:20px;margin-bottom:20px;font-size:13px;line-height:1.7;animation:fadeUp .8s ease .05s both;display:none}
+.warn-banner.show{display:block}
+.warn-banner h3{color:#E65100;font-size:15px;margin-bottom:8px}
+.warn-banner code{background:#FFF8E1;padding:2px 8px;border-radius:6px;font-size:12px;word-break:break-all}
+.warn-banner ol{margin:10px 0 0 20px}
+.warn-banner li{margin-bottom:6px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{to{left:100%}}
+
+@media print{
+  body{background:#fff}
+  .card,.analyze-btn,.reset-btn,.print-btn,.camera-btns,.warn-banner,.gen-btn{display:none!important}
+  .results{display:block!important}
+  .result-section{break-inside:avoid;box-shadow:none;border:1px solid #eee}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="header-badge">🎓 オープンキャンパス限定</div>
+    <h1>あなたに似合う<br>メイク診断 💄</h1>
+    <p>AIがあなたの顔を分析して、<br>似合うメイクや髪型をご提案します ✨</p>
+  </div>
+
+  <!-- file:// warning -->
+  <div class="warn-banner" id="warnBanner">
+    <h3>⚠️ ローカルサーバーで開いてください</h3>
+    <p>このファイルは <code>file://</code> で直接開くとAPIが動きません。<br>以下のどちらかの方法で起動してください：</p>
+    <ol>
+      <li><strong>Python（推奨）：</strong>このHTMLと同じフォルダでターミナルを開き<br>
+        <code>python -m http.server 8000</code><br>
+        → ブラウザで <a href="http://localhost:8000" target="_blank">http://localhost:8000</a> を開く</li>
+      <li><strong>Node.js：</strong>
+        <code>npx serve .</code><br>
+        → 表示されたURLをブラウザで開く</li>
+      <li><strong>VS Code：</strong>Live Server拡張機能 → 右クリック「Open with Live Server」</li>
+    </ol>
+  </div>
+
+  <!-- API Key -->
+  <div class="card f1">
+    <label>🔑 Gemini APIキー</label>
+    <small><a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> から無料で取得できます</small>
+    <div class="row">
+      <input type="password" id="apiKeyInput" placeholder="AIza...">
+      <button class="btn-save" onclick="saveApiKey()">保存</button>
+    </div>
+    <div id="apiStatus" class="api-status"></div>
+  </div>
+
+  <!-- Model -->
+  <div class="card f2">
+    <label>🤖 使用モデル</label>
+    <select id="modelSelect">
+      <option value="gemini-2.5-flash">Gemini 2.5 Flash（推奨・高速）</option>
+      <option value="gemini-2.5-pro">Gemini 2.5 Pro（高精度）</option>
+      <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite（最軽量）</option>
+    </select>
+  </div>
+
+  <!-- Upload -->
+  <div class="card f3" id="uploadCard">
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📸</div>
+      <h3>正面のお顔写真をアップロード</h3>
+      <p>タップして写真を選ぶか、ドラッグ＆ドロップ</p>
+    </div>
+    <div class="camera-btns">
+      <button class="cam-btn" onclick="document.getElementById('fileInput').click()">📁 ファイルを選択</button>
+      <button class="cam-btn" id="camToggle" onclick="toggleCamera()">📷 カメラで撮影</button>
+    </div>
+    <div class="camera-stage">
+      <video id="cameraVideo" autoplay playsinline></video>
+      <div class="countdown-overlay" id="countdownOverlay"><span class="countdown-num" id="countdownNum">3</span></div>
+    </div>
+    <canvas id="cameraCanvas"></canvas>
+    <button class="cam-btn active" id="captureBtn" onclick="startCountdown()">📸 撮影する</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(event)">
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>
+    <span class="shimmer"></span>
+    ✨ メイク診断スタート ✨
+  </button>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingText">AIがお顔を分析中...</p>
+    <small>10〜30秒ほどお待ちください</small>
+  </div>
+  <div class="results" id="results"></div>
+</div>
+<div class="flash" id="flash"></div>
+
+<script>
+// ── file:// detection ──
+if (location.protocol === 'file:') {
+  document.getElementById('warnBanner').classList.add('show');
+}
+
+let apiKey = '';
+let imageBase64 = '';
+let imageMimeType = '';
+let cameraStream = null;
+let counting = false;
+let lastResult = null;
+let makeoverDataUrl = '';
+
+const LOADING_MSGS = [
+  'お顔の特徴を読み取っています...',
+  '似合うカラーを分析中...',
+  'おすすめコスメを選んでいます...',
+  'もう少しで完成です ✨'
+];
+
+function saveApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if (!v) { showStatus('キーを入力してください', false); return; }
+  apiKey = v;
+  localStorage.setItem('gemini_api_key', v);
+  showStatus('✅ 保存しました！', true);
+  checkReady();
+}
+function showStatus(msg, ok) {
+  const el = document.getElementById('apiStatus');
+  el.textContent = msg; el.className = 'api-status ' + (ok?'ok':'ng');
+}
+// Restore saved key
+(function(){
+  const saved = localStorage.getItem('gemini_api_key');
+  if (saved) {
+    apiKey = saved;
+    document.getElementById('apiKeyInput').value = saved;
+    showStatus('✅ 保存済みキーを復元しました', true);
+  }
+})();
+
+function handleFile(e) { const f = e.target.files?.[0]; if (f) processFile(f); }
+function processFile(file) {
+  if (!file.type.startsWith('image/')) { alert('画像ファイルを選択してください'); return; }
+  imageMimeType = file.type;
+  const reader = new FileReader();
+  reader.onload = e => { imageBase64 = e.target.result.split(',')[1]; showPreview(e.target.result); checkReady(); };
+  reader.readAsDataURL(file);
+  stopCamera();
+}
+function showPreview(dataUrl) {
+  const z = document.getElementById('uploadZone');
+  z.classList.add('has-image');
+  z.innerHTML = '<img src="'+dataUrl+'" class="preview-img" alt="プレビュー"><button class="btn-change" onclick="event.stopPropagation();resetImage()">📷 写真を変更</button>';
+}
+function resetImage() {
+  imageBase64=''; imageMimeType='';
+  const z = document.getElementById('uploadZone');
+  z.classList.remove('has-image');
+  z.innerHTML = '<div class="upload-icon">📸</div><h3>正面のお顔写真をアップロード</h3><p>タップして写真を選ぶか、ドラッグ＆ドロップ</p>';
+  document.getElementById('fileInput').value = '';
+  checkReady();
+}
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) processFile(f); });
+
+async function toggleCamera() {
+  if (cameraStream) { stopCamera(); return; }
+  try {
+    const video = document.getElementById('cameraVideo');
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user',width:{ideal:640},height:{ideal:480}} });
+    video.srcObject = cameraStream; video.style.display = 'block';
+    document.getElementById('captureBtn').style.display = 'inline-block';
+    document.getElementById('camToggle').textContent = '❌ カメラを閉じる';
+  } catch { alert('カメラにアクセスできませんでした'); }
+}
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+  document.getElementById('cameraVideo').style.display='none';
+  document.getElementById('captureBtn').style.display='none';
+  document.getElementById('captureBtn').disabled=false;
+  document.getElementById('countdownOverlay').classList.remove('show');
+  counting=false;
+  document.getElementById('camToggle').textContent='📷 カメラで撮影';
+}
+function startCountdown() {
+  if (counting || !cameraStream) return;
+  counting = true;
+  const overlay = document.getElementById('countdownOverlay');
+  const numEl = document.getElementById('countdownNum');
+  const captureBtn = document.getElementById('captureBtn');
+  captureBtn.disabled = true;
+  overlay.classList.add('show');
+  const seq = ['3','2','1','📸'];
+  let i = 0;
+  function tick() {
+    numEl.textContent = seq[i];
+    numEl.classList.toggle('smile', seq[i] === '📸');
+    // restart pop animation
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth;
+    numEl.style.animation = '';
+    i++;
+    if (i < seq.length) {
+      setTimeout(tick, 1000);
+    } else {
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        const flash = document.getElementById('flash');
+        flash.classList.add('fire');
+        setTimeout(() => flash.classList.remove('fire'), 500);
+        capturePhoto();
+        captureBtn.disabled = false;
+        counting = false;
+      }, 700);
+    }
+  }
+  tick();
+}
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const dataUrl = canvas.toDataURL('image/jpeg',.85);
+  imageBase64=dataUrl.split(',')[1]; imageMimeType='image/jpeg';
+  showPreview(dataUrl); stopCamera(); checkReady();
+}
+function checkReady() { document.getElementById('analyzeBtn').disabled = !(apiKey && imageBase64); }
+
+async function analyze() {
+  const btn = document.getElementById('analyzeBtn');
+  const loadEl = document.getElementById('loading');
+  const results = document.getElementById('results');
+  const errorEl = document.getElementById('errorMsg');
+
+  btn.disabled=true; loadEl.classList.add('show');
+  results.classList.remove('show'); results.innerHTML='';
+  errorEl.classList.remove('show');
+
+  let msgIdx=0;
+  const loadText = document.getElementById('loadingText');
+  loadText.textContent = LOADING_MSGS[0];
+  const interval = setInterval(()=>{ msgIdx=Math.min(msgIdx+1,LOADING_MSGS.length-1); loadText.textContent=LOADING_MSGS[msgIdx]; },5000);
+
+  const model = document.getElementById('modelSelect').value;
+
+  const prompt = `あなたはプロのヘアメイクアーティストです。大学のオープンキャンパスで高校生女子向けにメイクと髪型の提案をしています。
+
+以下の正面顔画像を分析し、必ず以下のJSON形式のみで回答してください。JSONの前後に説明文やマークダウンは不要です。
+
+{
+  "face_analysis": {
+    "face_shape": "顔の形（丸顔・面長・ベース型・卵型・逆三角形型など）",
+    "parts_balance": "パーツバランスの特徴",
+    "face_type": "顔タイプ（キュート・クール・フェミニン・フレッシュ・エレガントなど）",
+    "personal_color": "パーソナルカラー推定（イエベ春・イエベ秋・ブルベ夏・ブルベ冬）",
+    "personal_color_reason": "パーソナルカラーの根拠を1〜2文で"
+  },
+  "hairstyle": {
+    "bangs": "似合う前髪",
+    "length": "似合う長さ（ショート・ボブ・ミディアム・ロング）",
+    "style": "おすすめスタイル名",
+    "reason": "理由を2〜3文で"
+  },
+  "lip": {
+    "color": "似合うリップの色を具体的に",
+    "texture": "質感（ツヤ・セミマット・マット・グロスなど）",
+    "reason": "理由を1〜2文で"
+  },
+  "cheek": {
+    "position": "チークを入れる位置を具体的に言葉で説明",
+    "color": "似合う色を具体的に",
+    "reason": "理由を1〜2文で"
+  },
+  "eye_makeup": {
+    "eyeliner": "アイラインの引き方を具体的に",
+    "eyeshadow_color": "アイシャドウの色",
+    "eyeshadow_method": "塗り方を具体的に説明",
+    "tear_bag": "涙袋メイクの作り方（使う色・ハイライトの入れ方・影の入れ方など）を具体的に",
+    "reason": "理由を1〜2文で"
+  },
+  "recommended_products": [
+    {
+      "name": "ブランド名 + 商品名 + 色番号やカラー名",
+      "brand": "ブランド名",
+      "use": "用途",
+      "price": 800,
+      "emoji": "💄"
+    }
+  ]
+}
+
+【重要な制約】
+- recommended_productsは5〜7品、合計金額7000円以内
+- プチプラブランド中心（キャンメイク、セザンヌ、クリオ、KATE、エクセル、リンメル、ちふれ、マジョリカマジョルカ、エテュセ、rom&ndなど）
+- 実在する商品名・2024〜2025年時点の定価目安
+- 高校生向けナチュラルメイク前提
+- eye_makeupには涙袋メイク（tear_bag）を必ず含め、ぷっくりとした自然な涙袋の作り方を提案すること
+- パーソナルカラーに合った色選び
+- JSONのみ返答
+- 全てのJSON文字列値は1行で書くこと。改行文字を含めないでください`;
+
+  try {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+    const body = {
+      contents: [{ parts: [
+        { inline_data: { mime_type: imageMimeType||'image/jpeg', data: imageBase64 } },
+        { text: prompt }
+      ]}],
+      generationConfig: { temperature:0.7, maxOutputTokens:4096, responseMimeType:'application/json' }
+    };
+
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData?.error?.message || 'HTTP ' + res.status);
+    }
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('AIからの応答が空でした。別の写真で試してみてください。');
+
+    let cleaned = text.trim();
+    // Remove markdown fences
+    if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(?:json)?\s*/,'').replace(/```\s*$/,'');
+
+    // Fix common Gemini JSON issues:
+    // 1. Unescaped newlines inside string values
+    // 2. Trailing commas
+    // 3. Control characters
+    function repairJson(str) {
+      // Replace literal newlines inside JSON string values with \\n
+      let result = '';
+      let inString = false;
+      let escape = false;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (escape) { result += ch; escape = false; continue; }
+        if (ch === '\\' && inString) { result += ch; escape = true; continue; }
+        if (ch === '"') { inString = !inString; result += ch; continue; }
+        if (inString && ch === '\n') { result += '\\n'; continue; }
+        if (inString && ch === '\r') { continue; }
+        if (inString && ch === '\t') { result += '\\t'; continue; }
+        result += ch;
+      }
+      // Remove trailing commas before } or ]
+      result = result.replace(/,\s*([}\]])/g, '$1');
+      return result;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (e1) {
+      try {
+        parsed = JSON.parse(repairJson(cleaned));
+      } catch (e2) {
+        console.error('Raw response:', text);
+        throw new Error('AIの応答をJSONとして読み取れませんでした。もう一度お試しください。');
+      }
+    }
+    renderResults(parsed);
+
+  } catch (err) {
+    let msg = err.message;
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      msg = 'ネットワークエラー：Gemini APIに接続できません。\n\n'
+        + '【対処法】\n'
+        + '① file:// で開いている場合 → ローカルサーバー経由で開いてください（ページ上部の案内参照）\n'
+        + '② APIキーが正しいか確認してください\n'
+        + '③ インターネット接続を確認してください';
+    }
+    errorEl.textContent = '⚠️ ' + msg;
+    errorEl.classList.add('show');
+  } finally {
+    clearInterval(interval);
+    loadEl.classList.remove('show');
+    btn.disabled=false; checkReady();
+  }
+}
+
+function renderResults(r) {
+  const el = document.getElementById('results');
+  const fa=r.face_analysis||{}, hs=r.hairstyle||{}, lp=r.lip||{}, ck=r.cheek||{}, ey=r.eye_makeup||{};
+  const products = r.recommended_products||[];
+  const total = products.reduce((s,p)=>s+(p.price||0),0);
+
+  el.innerHTML = `
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-face">🪞</div><h2>顔タイプ診断</h2></div>
+      <div class="tags">
+        <span class="tag pink">${fa.face_shape||''}</span>
+        <span class="tag lavender">${fa.face_type||''}</span>
+        <span class="tag peach">${fa.personal_color||''}</span>
+      </div>
+      <div class="result-content"><strong>パーツバランス：</strong>${fa.parts_balance||''}\n\n<strong>パーソナルカラー：</strong>${fa.personal_color||''}\n${fa.personal_color_reason||''}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-hair">💇‍♀️</div><h2>似合う髪型</h2></div>
+      <div class="tags">
+        <span class="tag lavender">${hs.bangs||''}</span>
+        <span class="tag pink">${hs.length||''}</span>
+        ${hs.style?'<span class="tag peach">'+hs.style+'</span>':''}
+      </div>
+      <div class="result-content">${hs.reason||''}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-lip">💋</div><h2>リップ</h2></div>
+      <div class="tags"><span class="tag pink">${lp.color||''}</span><span class="tag lavender">${lp.texture||''}</span></div>
+      <div class="result-content">${lp.reason||''}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-cheek">🌸</div><h2>チーク</h2></div>
+      <div class="tags"><span class="tag peach">${ck.color||''}</span></div>
+      <div class="result-content"><strong>入れる位置：</strong>${ck.position||''}\n\n${ck.reason||''}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-eye">👁️</div><h2>アイメイク</h2></div>
+      <div class="tags"><span class="tag lavender">${ey.eyeliner||''}</span><span class="tag pink">${ey.eyeshadow_color||''}</span></div>
+      <div class="result-content"><strong>アイライン：</strong>${ey.eyeliner||''}\n\n<strong>アイシャドウ：</strong>${ey.eyeshadow_method||''}${ey.tear_bag?'\n\n<strong>涙袋：</strong>'+ey.tear_bag:''}\n\n${ey.reason||''}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-tools">🛒</div><h2>おすすめコスメ（7,000円以内）</h2></div>
+      <div class="product-list">
+        ${products.map(p=>`
+          <div class="product-card">
+            <div class="product-emoji">${p.emoji||'💄'}</div>
+            <div class="product-info"><div class="product-name">${p.name||''}</div><div class="product-use">${p.use||''}</div></div>
+            <div class="product-price">¥${(p.price||0).toLocaleString()}</div>
+          </div>`).join('')}
+      </div>
+      <div class="total-price">合計：¥${total.toLocaleString()}</div>
+    </div>
+    <div class="result-section">
+      <div class="section-header"><div class="section-icon icon-face">💖</div><h2>メイク後のイメージ</h2></div>
+      <div id="makeoverBody">
+        <button class="gen-btn" id="genBtn" onclick="generateMakeover()">✨ このメイクを施した画像を見る ✨</button>
+        <p class="gen-note">撮影・アップロードしたお顔写真に、上記の提案メイクをAIで反映したイメージを生成します（10〜30秒ほど）。<br>※ 画像生成はGeminiの無料枠の対象外です。利用にはAPIキーで請求（billing）の有効化が必要な場合があります。</p>
+      </div>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ 結果を印刷する</button>
+    <button class="reset-btn" onclick="resetAll()">🔄 もう一度診断する</button>`;
+  lastResult = r;
+  el.classList.add('show');
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function generateMakeover() {
+  const body = document.getElementById('makeoverBody');
+  if (!imageBase64) {
+    body.innerHTML = '<p class="gen-note">⚠️ 元のお顔写真が見つかりませんでした。もう一度診断してください。</p>';
+    return;
+  }
+  const r = lastResult || {};
+  const hs=r.hairstyle||{}, lp=r.lip||{}, ck=r.cheek||{}, ey=r.eye_makeup||{};
+
+  body.innerHTML = '<div class="gen-loading"><div class="spinner"></div>AIがメイクを施しています...<br><small>10〜30秒ほどお待ちください</small></div>';
+
+  const makeoverPrompt = `この女性の顔写真に、以下のメイクをナチュラルに施した画像を生成してください。`
+    + `本人の顔立ち・骨格・肌・髪型のベースはそのまま保ち、別人にしないでください。高校生らしい清楚でナチュラルな仕上がりにしてください。\n\n`
+    + `【リップ】色: ${lp.color||''} / 質感: ${lp.texture||''}\n`
+    + `【チーク】位置: ${ck.position||''} / 色: ${ck.color||''}\n`
+    + `【アイメイク】アイライン: ${ey.eyeliner||''} / アイシャドウ: ${ey.eyeshadow_color||''}（${ey.eyeshadow_method||''}）\n`
+    + `【涙袋メイク】${ey.tear_bag||'下まぶたの目頭から黒目下にかけて、明るいパールカラーでぷっくりとしたハイライトを入れ、すぐ下に細く自然な影を入れて立体感を出す'}\n`
+    + `必ず両目の下に、ぷっくりとした自然な涙袋を作ってください（涙袋の上側にツヤのあるハイライト、下側にうっすら影）。やりすぎず高校生らしいナチュラルな涙袋にしてください。\n`
+    + `肌は自然にトーンアップし、やりすぎない仕上がりに。写真の構図・背景・向きは元のまま、メイクのみを反映してください。`;
+
+  try {
+    // gemini-2.5-flash-image (画像生成・編集対応モデル)
+    const imgModel = 'gemini-2.5-flash-image';
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + imgModel + ':generateContent?key=' + apiKey;
+    const reqBody = {
+      contents: [{ parts: [
+        { inline_data: { mime_type: imageMimeType||'image/jpeg', data: imageBase64 } },
+        { text: makeoverPrompt }
+      ]}]
+    };
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reqBody) });
+    if (!res.ok) {
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData?.error?.message || 'HTTP ' + res.status);
+    }
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p => p.inline_data || p.inlineData);
+    const inline = imgPart && (imgPart.inline_data || imgPart.inlineData);
+    if (!inline?.data) {
+      const textPart = parts.find(p => p.text);
+      throw new Error(textPart?.text ? 'モデルが画像を返しませんでした。' : 'メイク画像を取得できませんでした。');
+    }
+    const mime = inline.mime_type || inline.mimeType || 'image/png';
+    makeoverDataUrl = 'data:' + mime + ';base64,' + inline.data;
+    const beforeUrl = 'data:' + (imageMimeType||'image/jpeg') + ';base64,' + imageBase64;
+
+    body.innerHTML = `
+      <div class="makeover-grid">
+        <div class="makeover-item">
+          <div class="makeover-label">Before（元の写真）</div>
+          <img src="${beforeUrl}" alt="メイク前">
+        </div>
+        <div class="makeover-item">
+          <div class="makeover-label after">After（提案メイク）💄</div>
+          <img src="${makeoverDataUrl}" alt="メイク後">
+        </div>
+      </div>
+      <p class="gen-note">※ AIが生成したイメージです。実際の仕上がりとは異なる場合があります。</p>
+      <button class="gen-btn" style="margin-top:14px" onclick="generateMakeover()">🔄 もう一度生成する</button>`;
+  } catch (err) {
+    let msg = err.message || '';
+    let extra = '';
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      msg = 'ネットワークエラー：画像生成APIに接続できません。インターネット接続をご確認ください。';
+    } else if (/quota|RESOURCE_EXHAUSTED|limit:\s*0|free_tier|rate.?limit|429/i.test(msg)) {
+      msg = '画像生成モデル（gemini-2.5-flash-image）は無料枠では利用できません。';
+      extra = '<p class="gen-note" style="margin-top:8px">'
+        + '画像生成は Google の無料枠の対象外（リクエスト上限 0）です。ご利用には Google AI Studio / Google Cloud で<strong>請求（billing）の有効化</strong>が必要です。<br>'
+        + 'なお、メイク<strong>診断（テキスト）は無料枠のまま利用可能</strong>です。診断結果はそのままご覧いただけます。</p>'
+        + '<a class="gen-note" style="display:block;color:var(--pink-500);margin-top:6px" href="https://ai.google.dev/gemini-api/docs/rate-limits" target="_blank">▶ 料金・レート制限について（公式ドキュメント）</a>';
+    } else if (msg.includes('not found') || msg.includes('404') || msg.includes('not supported') || msg.includes('NOT_FOUND')) {
+      msg = 'お使いのAPIキーでは画像生成モデル（gemini-2.5-flash-image）が利用できない可能性があります。';
+    } else if (/API key|API_KEY|invalid|PERMISSION/i.test(msg)) {
+      msg = 'APIキーが無効か、画像生成の権限がありません。キーを確認してください。';
+    }
+    body.innerHTML = `<p class="gen-note">⚠️ ${msg}</p>` + extra
+      + '<button class="gen-btn" style="margin-top:14px" onclick="generateMakeover()">🔄 もう一度試す</button>';
+  }
+}
+
+function resetAll() {
+  resetImage();
+  lastResult = null; makeoverDataUrl = '';
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('results').innerHTML='';
+  document.getElementById('errorMsg').classList.remove('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
